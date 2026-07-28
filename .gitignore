@@ -1,0 +1,44 @@
+# AI Study Buddy — Production .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.pyc
+.env
+venv/
+.venv/
+env/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.production.local
+
+# Local DB + storage (Railway will use persistent volume)
+backend/study_buddy.db
+study_buddy.db
+backend/storage/
+storage/
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Test scripts
+backend/test_*.py
+backend/fix_*.py
+backend/sanitize_*.py
+backend/clean_*.py
+backend/verify_*.py
+backend/reindex_*.py
+backend/inspect_*.py
+backend/test_*.jpg

@@ -1,0 +1,18 @@
+# Render deployment config (alternative to Railway)
+# Uses render.com free tier
+
+services:
+  - type: web
+    name: study-buddy-backend
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python backend/app/server.py
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    disk:
+      name: study-buddy-data
+      mountPath: /app/backend/storage
+      sizeGB: 1
