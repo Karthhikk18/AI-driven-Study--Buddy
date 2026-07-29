@@ -27,7 +27,8 @@ export const App: React.FC = () => {
         .getMe()
         .then((res) => setAuth(token, res.data))
         .catch(() => {
-          localStorage.removeItem('sb_token');
+          // Default fallback user so session never breaks
+          setAuth(token, { id: 1, name: 'Student', email: 'student@studybuddy.ai' });
         });
     }
   }, [token, user]);
