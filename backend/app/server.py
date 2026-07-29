@@ -499,11 +499,12 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
             return
 
         elif path == "/api/v1/documents/":
-            subj_id = query.get("subject_id", [None])[0]
-            if subj_id:
-                cursor.execute("SELECT id, subject_id, filename, file_type, ocr_status, ocr_confidence, intelligence_metadata, created_at, extracted_text FROM documents WHERE subject_id=?", (subj_id,))
+            raw_s = query.get("subject_id", [None])[0]
+            subj_id = int(raw_s) if raw_s and str(raw_s).isdigit() else None
+            if subj_id is not None:
+                cursor.execute("SELECT id, subject_id, filename, file_type, ocr_status, ocr_confidence, intelligence_metadata, created_at, extracted_text FROM documents WHERE subject_id=? ORDER BY id DESC", (subj_id,))
             else:
-                cursor.execute("SELECT id, subject_id, filename, file_type, ocr_status, ocr_confidence, intelligence_metadata, created_at, extracted_text FROM documents")
+                cursor.execute("SELECT id, subject_id, filename, file_type, ocr_status, ocr_confidence, intelligence_metadata, created_at, extracted_text FROM documents ORDER BY id DESC")
             rows = cursor.fetchall()
             docs = []
             for r in rows:
@@ -525,7 +526,8 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
             return
 
         elif path.startswith("/api/v1/quiz/flashcards/"):
-            subj_id = path.rsplit('/', 1)[-1]
+            raw_s = path.rstrip("/").rsplit('/', 1)[-1]
+            subj_id = int(raw_s) if raw_s and raw_s.isdigit() else 1
             cursor.execute("SELECT id, subject_id, question, answer, topic FROM flashcards WHERE subject_id=?", (subj_id,))
             rows = cursor.fetchall()
             cards = [{"id": r[0], "subject_id": r[1], "question": r[2], "answer": r[3], "topic": r[4]} for r in rows]
@@ -577,13 +579,9 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
             return
 
         elif path.startswith("/api/v1/subjects/") and path.endswith("/insights"):
-            parts = path.split("/")
-            subj_id = parts[4] if len(parts) > 4 else None
-            if not subj_id:
-                self._set_headers(404)
-                self.wfile.write(json.dumps({"detail": "Subject not found"}).encode())
-                conn.close()
-                return
+            parts = path.rstrip("/").split("/")
+            raw_s = parts[4] if len(parts) > 4 else "1"
+            subj_id = int(raw_s) if raw_s and raw_s.isdigit() else 1
 
             cursor.execute("SELECT name FROM subjects WHERE id=?", (subj_id,))
             subj_row = cursor.fetchone()
@@ -1349,6 +1347,22 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
             conn.commit()
             self._set_headers(200)
             self.wfile.write(json.dumps({"message": "Session logged", "date": today}).encode())
+            conn.close()
+            return
+
+        elif path == "/api/v1/agent/command":
+            user_id = self._get_authenticated_user_id() or 1
+            data = json.loads(body_bytes.decode('utf-8')) if body_bytes else {}
+            command = data.get("command", "")
+            raw_subj = data.get("subject_id", 1)
+            subj_id = int(raw_subj) if raw_subj and str(raw_subj).isdigit() else 1
+            mode = data.get("mode", "Intermediate")
+
+            from app.ai.os_agent import OSAgent
+            res = OSAgent.execute_command(command=command, subject_id=subj_id, mode=mode)
+
+            self._set_headers(200)
+            self.wfile.write(json.dumps(res).encode())
             conn.close()
             return
 
