@@ -33,11 +33,9 @@ export const documentApi = {
   createSubject: (name: string) => api.post('/documents/subjects', { name }),
   uploadDocument: (subjectId: number, file: File) => {
     const formData = new FormData();
-    formData.append('subject_id', subjectId.toString());
+    formData.append('subject_id', (subjectId || 1).toString());
     formData.append('file', file);
-    return api.post('/documents/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return api.post('/documents/upload', formData);
   },
   uploadLink: (subjectId: number, url: string) =>
     api.post('/documents/upload-link', { subject_id: subjectId, url }),
