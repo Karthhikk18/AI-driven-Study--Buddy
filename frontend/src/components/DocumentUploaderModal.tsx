@@ -35,17 +35,12 @@ export const DocumentUploaderModal: React.FC = () => {
         setResultMessage(null);
       }, 1500);
     } catch (err: any) {
-      console.warn('Upload API fallback:', err);
-      triggerRefresh();
+      console.error('Upload API error:', err);
+      const msg = err.response?.data?.detail || err.message || 'Upload failed.';
       setResultMessage({
-        type: 'success',
-        text: `Successfully uploaded & OCR processed '${file.name}'!`,
+        type: 'error',
+        text: `Upload failed: ${msg}`,
       });
-      setFile(null);
-      setTimeout(() => {
-        setUploadModalOpen(false);
-        setResultMessage(null);
-      }, 1500);
     } finally {
       setIsUploading(false);
     }
@@ -67,10 +62,16 @@ export const DocumentUploaderModal: React.FC = () => {
         summary: res.data.summary,
       });
       setLinkUrl('');
+      setTimeout(() => {
+        setUploadModalOpen(false);
+        setResultMessage(null);
+      }, 2000);
     } catch (err: any) {
+      console.error('Link API error:', err);
+      const msg = err.response?.data?.detail || err.message || 'Link ingestion failed.';
       setResultMessage({
         type: 'error',
-        text: err.response?.data?.detail || 'Link ingestion failed. Please check the URL.',
+        text: `Ingestion failed: ${msg}`,
       });
     } finally {
       setIsUploading(false);
