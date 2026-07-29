@@ -132,15 +132,15 @@ export const DocumentUploaderModal: React.FC = () => {
               <div className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-2xl p-6 text-center hover:border-black dark:hover:border-white transition-colors cursor-pointer bg-zinc-50 dark:bg-zinc-900/50">
                 <input
                   type="file"
-                  accept=".pdf,.png,.jpg,.jpeg,.txt,.ppt,.pptx"
+                  accept="*/*"
                   onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
                   className="hidden"
                   id="file-upload-input"
                 />
                 <label htmlFor="file-upload-input" className="cursor-pointer space-y-2 block">
                   <FileText className="w-10 h-10 mx-auto text-zinc-400" />
-                  <p className="text-xs font-bold">{file ? file.name : 'Click to select study material'}</p>
-                  <p className="text-[10px] text-zinc-400">PDF, Scanned Handwritten Notes, PNG, JPG (Max 50MB)</p>
+                  <p className="text-xs font-bold">{file ? file.name : 'Click to select any study material'}</p>
+                  <p className="text-[10px] text-zinc-400">PDF, Word (.doc/.docx), PPT, Handwritten Notes, PNG, JPG, Web Links</p>
                 </label>
               </div>
 
