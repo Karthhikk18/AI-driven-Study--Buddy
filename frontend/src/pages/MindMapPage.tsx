@@ -115,6 +115,10 @@ export const MindMapPage: React.FC = () => {
   const [loadingExplanation, setLoadingExplanation] = useState(false);
   const [rawData, setRawData] = useState<MindMapData | null>(null);
 
+  useEffect(() => {
+    handleGenerate();
+  }, [selectedSubject]);
+
   const handleGenerate = async () => {
     setIsGenerating(true);
     setSelectedNode(null);

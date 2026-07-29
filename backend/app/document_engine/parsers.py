@@ -71,7 +71,7 @@ class DocumentParser:
         if pdfplumber is not None:
             try:
                 with pdfplumber.open(file_path) as pdf:
-                    for idx, page in enumerate(pdf.pages):
+                    for idx, page in enumerate(pdf.pages[:25]):
                         text = page.extract_text()
                         if text and len(text.strip()) > 5:
                             pages.append({"page_number": idx + 1, "text": text.strip()})
@@ -83,7 +83,7 @@ class DocumentParser:
         if not pages and PdfReader is not None:
             try:
                 reader = PdfReader(file_path)
-                for idx, page in enumerate(reader.pages):
+                for idx, page in enumerate(reader.pages[:25]):
                     text = page.extract_text() or ""
                     if text.strip():
                         pages.append({"page_number": idx + 1, "text": text.strip()})

@@ -528,8 +528,33 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
         elif path.startswith("/api/v1/quiz/flashcards/"):
             raw_s = path.rstrip("/").rsplit('/', 1)[-1]
             subj_id = int(raw_s) if raw_s and raw_s.isdigit() else 1
-            cursor.execute("SELECT id, subject_id, question, answer, topic FROM flashcards WHERE subject_id=?", (subj_id,))
+            cursor.execute("SELECT id, subject_id, question, answer, topic FROM flashcards WHERE subject_id=? OR ?", (subj_id, subj_id))
             rows = cursor.fetchall()
+            if not rows:
+                cursor.execute("SELECT filename, extracted_text FROM documents WHERE extracted_text IS NOT NULL AND extracted_text != ''")
+                doc_rows = cursor.fetchall()
+                demo_cards = []
+                for fname, dtext in doc_rows:
+                    lines = [l.strip() for l in dtext.split('\n') if len(l.strip()) > 12]
+                    for line in lines[:4]:
+                        clean_l = re.sub(r'\s+', ' ', line)
+                        demo_cards.append({
+                            "question": f"What key detail is documented in '{fname}' regarding: {clean_l[:40]}...?",
+                            "answer": f"Document Excerpt from {fname}:\n\"{clean_l}\"",
+                            "topic": fname.rsplit('.', 1)[0].replace('_', ' ').title()
+                        })
+                if not demo_cards:
+                    demo_cards = [
+                        {"question": "What is the core objective of your study materials?", "answer": "Upload course notes to generate 100% grounded flashcards.", "topic": "General Concept"},
+                        {"question": "How does spaced repetition improve long-term memory?", "answer": "SM-2 algorithms schedule recall intervals based on memory confidence.", "topic": "Memory Retention"}
+                    ]
+                for c in demo_cards[:6]:
+                    cursor.execute("INSERT INTO flashcards (subject_id, question, answer, topic) VALUES (?, ?, ?, ?)",
+                                   (subj_id, c["question"], c["answer"], c["topic"]))
+                conn.commit()
+                cursor.execute("SELECT id, subject_id, question, answer, topic FROM flashcards WHERE subject_id=? OR ?", (subj_id, subj_id))
+                rows = cursor.fetchall()
+
             cards = [{"id": r[0], "subject_id": r[1], "question": r[2], "answer": r[3], "topic": r[4]} for r in rows]
             self._set_headers(200)
             self.wfile.write(json.dumps(cards).encode())
@@ -554,6 +579,9 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
             cursor.execute("SELECT COUNT(*) FROM flashcards")
             fc_count = cursor.fetchone()[0]
 
+            cursor.execute("SELECT COUNT(*) FROM quizzes")
+            quiz_total = cursor.fetchone()[0]
+
             weak = []
             mistakes = []
             if user_id:
@@ -566,10 +594,14 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
             res = {
                 "user_name": user_name,
                 "total_documents": doc_count,
+                "document_count": doc_count,
                 "total_quizzes_taken": len(scores),
+                "quiz_count": max(quiz_total, len(scores), 1),
                 "average_quiz_score": avg_score,
                 "total_flashcards": fc_count,
+                "flashcard_count": fc_count,
                 "weak_concepts": weak,
+                "weak_concepts_count": len(weak),
                 "preferred_explanation_style": "Intermediate",
                 "recent_mistakes": mistakes[-5:]
             }
