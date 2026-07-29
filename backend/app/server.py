@@ -209,14 +209,11 @@ def send_real_email_otp_if_configured(recipient_email: str, otp: str):
 class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
     def _set_headers(self, status=200, content_type="application/json"):
         self.send_response(status)
-        origin = self.headers.get("Origin")
-        if origin:
-            self.send_header("Access-Control-Allow-Origin", origin)
-            self.send_header("Access-Control-Allow-Credentials", "true")
-        else:
-            self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+        origin = self.headers.get("Origin") or self.headers.get("origin") or "https://frontend-snowy-one-61.vercel.app"
+        self.send_header("Access-Control-Allow-Origin", origin)
+        self.send_header("Access-Control-Allow-Credentials", "true")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, PATCH")
+        self.send_header("Access-Control-Allow-Headers", "*")
         self.send_header("Content-Type", content_type)
         self.end_headers()
 

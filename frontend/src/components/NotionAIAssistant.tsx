@@ -95,6 +95,12 @@ export const NotionAIAssistant: React.FC = () => {
           setIsOpen(false);
           setActiveTab('quiz');
         }, 1000);
+      } else if (actionData.action === 'open_focus_modal') {
+        setTimeout(() => {
+          setIsOpen(false);
+          const btn = document.getElementById('btn-focus-flow');
+          if (btn) btn.click();
+        }, 600);
       } else if (actionData.action === 'export_file' && actionData.file_url) {
         const link = document.createElement('a');
         link.href = actionData.file_url;

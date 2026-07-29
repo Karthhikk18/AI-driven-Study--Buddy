@@ -166,6 +166,13 @@ class OSAgent:
             )
             return {"action": "rag_answer", "message": f"🐣 **Buddy AI Simplified Explanation**:\n\n{ai_resp}", "sources": rag_res["sources"]}
 
+        # 8.5 Focus Flow Mode Command ("turn on focus mode", "focus", "pomodoro", /focus)
+        if "focus" in cmd_clean or "pomodoro" in cmd_clean or cmd_clean.startswith("/focus"):
+            return {
+                "action": "open_focus_modal",
+                "message": "🧘 **Buddy AI OS Agent**: Launching Focus Flow Mode & Ambient Sound Generator...",
+            }
+
         # 9. Navigation Commands (/dashboard, /vault, /analytics, /planner, /navigate)
         if any(w in cmd_clean for w in ["navigate", "go to", "open vault", "open flashcards", "open quiz", "open dashboard", "open analytics", "open planner", "open to do"]) or any(cmd_clean.startswith(x) for x in ["/dashboard", "/vault", "/analytics", "/planner"]):
             target = "dashboard"

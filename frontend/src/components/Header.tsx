@@ -35,6 +35,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFocusFlow }) => {
         {/* Focus Flow Button */}
         {onOpenFocusFlow && (
           <button
+            id="btn-focus-flow"
             onClick={onOpenFocusFlow}
             className="hidden sm:flex items-center space-x-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-extrabold shadow-sm transition-all hover:shadow-md hover:scale-105"
             title="Open Focus Flow Mode"
