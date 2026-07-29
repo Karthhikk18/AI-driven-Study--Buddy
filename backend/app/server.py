@@ -981,40 +981,46 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
 
         elif path == "/api/v1/documents/upload":
             filename = "uploaded_material.pdf"
+            subj_id = 1
             try:
                 user_id = self._get_authenticated_user_id() or 1
-                subj_id = 1
 
                 # Extract subject_id
-                subj_match = re.search(rb'name="subject_id"[\r\n]+([0-9]+)', body_bytes)
+                subj_match = re.search(rb'name="subject_id"[\s\S]*?\r?\n\r?\n([0-9]+)', body_bytes) or re.search(rb'name="subject_id"[\r\n\s]+([0-9]+)', body_bytes)
                 if subj_match:
-                    subj_id = int(subj_match.group(1).decode('utf-8', errors='ignore'))
+                    try: subj_id = int(subj_match.group(1).decode('utf-8', errors='ignore'))
+                    except Exception: pass
 
                 # Extract filename
                 fn_match = re.search(rb'filename="([^"]+)"', body_bytes) or re.search(rb"filename='([^']+)'", body_bytes)
                 if fn_match:
-                    try:
-                        filename = fn_match.group(1).decode('utf-8', errors='ignore')
-                    except Exception:
-                        pass
+                    try: filename = fn_match.group(1).decode('utf-8', errors='ignore')
+                    except Exception: pass
 
-                # Sanitize filename
                 filename = os.path.basename(filename).strip() or "uploaded_material.pdf"
 
-                # Extract binary file content supporting CRLF (\r\n\r\n) and LF (\n\n)
+                # Extract binary file content
                 file_bytes = b""
-                head_match = re.search(rb'filename="[^"]+"[^\r\n]*[\r\n]+(?:Content-Type:[^\r\n]+[\r\n]+)?[\r\n]+', body_bytes, re.IGNORECASE)
-                if head_match:
-                    start_pos = head_match.end()
-                    end_match = re.search(rb'[\r\n]+--[a-zA-Z0-9_\-]+', body_bytes[start_pos:])
-                    if end_match:
-                        file_bytes = body_bytes[start_pos : start_pos + end_match.start()]
-                    else:
-                        file_bytes = body_bytes[start_pos:]
-                else:
-                    parts = re.split(rb'[\r\n]{2,}', body_bytes, maxsplit=3)
-                    if len(parts) >= 3:
-                        file_bytes = parts[2].rsplit(b'--', 1)[0].rstrip(b'\r\n')
+                fn_idx = body_bytes.find(b'filename=')
+                if fn_idx != -1:
+                    header_end = body_bytes.find(b'\r\n\r\n', fn_idx)
+                    offset = 4
+                    if header_end == -1:
+                        header_end = body_bytes.find(b'\n\n', fn_idx)
+                        offset = 2
+
+                    if header_end != -1:
+                        start_pos = header_end + offset
+                        b_idx = body_bytes.rfind(b'\r\n--', start_pos)
+                        if b_idx == -1:
+                            b_idx = body_bytes.rfind(b'\n--', start_pos)
+                        if b_idx != -1:
+                            file_bytes = body_bytes[start_pos:b_idx]
+                        else:
+                            file_bytes = body_bytes[start_pos:]
+
+                if not file_bytes:
+                    file_bytes = body_bytes
 
                 timestamp = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
                 safe_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', filename)
@@ -1080,6 +1086,59 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
                 }).encode())
                 conn.close()
                 return
+
+        elif path == "/api/v1/documents/upload-link":
+            user_id = self._get_authenticated_user_id() or 1
+            data = json.loads(body_bytes.decode('utf-8')) if body_bytes else {}
+            subj_id = int(data.get("subject_id", 1))
+            url_str = data.get("url", "").strip()
+
+            from app.document_engine.link_parser import LinkParser
+            parsed = LinkParser.parse_and_fetch_url(url_str)
+            title = parsed.get("title") or url_str
+            ext_text = parsed.get("extracted_text") or f"Ingested web content from {url_str}"
+            file_type = parsed.get("type", "wikipedia")
+
+            summary_prompt = f"Summarize the following content from '{title}' in clear bullet points:\n\n{ext_text[:2500]}\n\nEXECUTIVE SUMMARY:"
+            try:
+                from app.ai.llm import LLMProvider
+                summary_text = LLMProvider.generate_response(summary_prompt)
+            except Exception:
+                summary_text = f"Ingested summary for {title}"
+
+            meta = {
+                "subject": "General Study",
+                "topic": title,
+                "url": url_str,
+                "concepts": [file_type.upper(), "Web Link"],
+                "summary": summary_text
+            }
+
+            cursor.execute(
+                "INSERT INTO documents (subject_id, filename, file_path, file_type, ocr_status, ocr_confidence, extracted_text, intelligence_metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (subj_id, title, url_str, file_type, "completed", 98.0, ext_text, json.dumps(meta))
+            )
+            doc_id = cursor.lastrowid
+            conn.commit()
+
+            try:
+                from app.rag.vectorstore import VectorStore
+                vstore = VectorStore(subject_id=subj_id)
+                vstore.add_chunks([{"page_number": 1, "content": ext_text}], document_id=doc_id, filename=title)
+            except Exception:
+                pass
+
+            self._set_headers(200)
+            self.wfile.write(json.dumps({
+                "id": doc_id,
+                "filename": title,
+                "file_type": file_type,
+                "summary": summary_text,
+                "status": "completed",
+                "message": f"Successfully ingested and summarized link '{title}'!"
+            }).encode())
+            conn.close()
+            return
 
         elif path == "/api/v1/chat/":
             user_id = self._get_authenticated_user_id()
