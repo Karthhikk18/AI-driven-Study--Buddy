@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// In production (Vercel), VITE_API_URL points to Railway backend.
-// In dev, the Vite proxy forwards /api to localhost:8000.
-const API_BASE_URL = '/api/v1';
+// Production Railway API backend URL
+const API_BASE_URL = 'https://web-production-63536.up.railway.app/api/v1';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
