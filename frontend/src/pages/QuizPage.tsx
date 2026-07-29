@@ -21,8 +21,13 @@ export const QuizPage: React.FC = () => {
 
     try {
       const res = await quizApi.generateQuiz(activeSubjectId, difficulty);
-      setQuiz(res.data);
-      setUserAnswers(new Array(res.data.questions?.length || 0).fill(-1));
+      let qs = res.data.questions;
+      if (typeof qs === 'string') {
+        try { qs = JSON.parse(qs); } catch {}
+      }
+      if (!Array.isArray(qs)) qs = [];
+      setQuiz({ ...res.data, questions: qs });
+      setUserAnswers(new Array(qs.length).fill(-1));
     } catch (err) {
       console.error(err);
     } finally {

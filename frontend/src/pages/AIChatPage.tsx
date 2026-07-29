@@ -24,7 +24,8 @@ export const AIChatPage: React.FC = () => {
     setIsLoading(true);
     try {
       const res = await chatApi.sendQuery(selectedSubject?.id || 1, query, mode);
-      setMessages((prev) => [...prev, { role: 'ai', content: res.data.answer, sources: res.data.sources }]);
+      const answerText = res.data?.response || res.data?.answer || 'I could not find an answer in your notes.';
+      setMessages((prev) => [...prev, { role: 'ai', content: answerText, sources: res.data?.sources || [] }]);
     } catch (err) {
       setMessages((prev) => [...prev, { role: 'ai', content: '⚠️ Could not connect to Buddy AI. Please check the backend server.' }]);
     } finally {

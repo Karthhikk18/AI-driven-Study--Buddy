@@ -252,7 +252,7 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
         cursor = conn.cursor()
 
         if path.startswith("/api/v1/todo/"):
-            task_id = path.split("/")[-1]
+            task_id = path.rstrip("/").split("/")[-1]
             cursor.execute("DELETE FROM todo_tasks WHERE id=?", (task_id,))
             conn.commit()
             self._set_headers(200)
@@ -261,7 +261,7 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
             return
 
         elif path.startswith("/api/v1/pages/"):
-            page_id = path.split("/")[-1]
+            page_id = path.rstrip("/").split("/")[-1]
             cursor.execute("DELETE FROM notion_pages WHERE id=?", (page_id,))
             conn.commit()
             self._set_headers(200)
@@ -270,8 +270,7 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
             return
 
         elif path.startswith("/api/v1/documents/"):
-            parts = path.split("/")
-            doc_id = parts[4] if len(parts) > 4 else None
+            doc_id = path.rstrip("/").split("/")[-1]
             cursor.execute("SELECT file_path, filename FROM documents WHERE id=?", (doc_id,))
             d = cursor.fetchone()
             if d:
@@ -302,8 +301,8 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
         cursor = conn.cursor()
 
         if path.startswith("/api/v1/todo/"):
-            task_id = path.split("/")[-1]
-            data = json.loads(body_bytes.decode('utf-8'))
+            task_id = path.rstrip("/").split("/")[-1]
+            data = json.loads(body_bytes.decode('utf-8')) if body_bytes else {}
             cursor.execute("SELECT completed FROM todo_tasks WHERE id=?", (task_id,))
             row = cursor.fetchone()
             curr_comp = row[0] if row else 0
@@ -312,14 +311,14 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
             cursor.execute("UPDATE todo_tasks SET completed=? WHERE id=?", (new_comp, task_id))
             conn.commit()
             self._set_headers(200)
-            self.wfile.write(json.dumps({"id": int(task_id), "completed": new_comp}).encode())
+            self.wfile.write(json.dumps({"id": int(task_id) if task_id.isdigit() else 1, "completed": new_comp}).encode())
             conn.close()
             return
 
         elif path.startswith("/api/v1/pages/"):
-            page_id = path.split("/")[-1]
-            data = json.loads(body_bytes.decode('utf-8'))
-            title = data.get("title")
+            page_id = path.rstrip("/").split("/")[-1]
+            data = json.loads(body_bytes.decode('utf-8')) if body_bytes else {}
+            title = data.get("title", "Untitled Page")
             icon = data.get("icon", "📄")
             blocks = data.get("blocks", [])
 
@@ -327,7 +326,7 @@ class StudyBuddyHandler(http.server.BaseHTTPRequestHandler):
                            (title, icon, json.dumps(blocks), page_id))
             conn.commit()
             self._set_headers(200)
-            self.wfile.write(json.dumps({"id": int(page_id), "title": title, "icon": icon, "blocks": blocks}).encode())
+            self.wfile.write(json.dumps({"id": int(page_id) if page_id.isdigit() else 1, "title": title, "icon": icon, "blocks": blocks}).encode())
             conn.close()
             return
 
