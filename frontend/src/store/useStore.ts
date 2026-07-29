@@ -27,6 +27,8 @@ interface AppState {
   setSelectedSubject: (subject: Subject | null) => void;
   isUploadModalOpen: boolean;
   setUploadModalOpen: (open: boolean) => void;
+  refreshTrigger: number;
+  triggerRefresh: () => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -66,4 +68,7 @@ export const useStore = create<AppState>((set) => ({
 
   isUploadModalOpen: false,
   setUploadModalOpen: (isUploadModalOpen) => set({ isUploadModalOpen }),
+
+  refreshTrigger: 0,
+  triggerRefresh: () => set((state) => ({ refreshTrigger: state.refreshTrigger + 1 })),
 }));

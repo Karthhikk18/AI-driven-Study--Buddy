@@ -6,7 +6,7 @@ import { DocumentViewerModal } from '../components/DocumentViewerModal';
 import { AIAudioPodcastModal } from '../components/AIAudioPodcastModal';
 
 export const KnowledgeVaultPage: React.FC = () => {
-  const { selectedSubject, setUploadModalOpen } = useStore();
+  const { selectedSubject, setUploadModalOpen, refreshTrigger } = useStore();
   const [documents, setDocuments] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
@@ -26,7 +26,7 @@ export const KnowledgeVaultPage: React.FC = () => {
 
   useEffect(() => {
     fetchDocs();
-  }, [selectedSubject]);
+  }, [selectedSubject, refreshTrigger]);
 
   const handleDeleteDoc = async (e: React.MouseEvent, docId: number) => {
     e.stopPropagation();

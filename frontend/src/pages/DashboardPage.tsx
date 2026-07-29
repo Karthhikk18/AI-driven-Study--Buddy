@@ -5,7 +5,7 @@ import { FileText, Plus, Sparkles, Trash2, LayoutTemplate, GraduationCap, BookOp
 import { NotionBlockEditor } from '../components/NotionBlockEditor';
 
 export const DashboardPage: React.FC = () => {
-  const { user, selectedSubject, setUploadModalOpen } = useStore();
+  const { user, selectedSubject, setUploadModalOpen, refreshTrigger } = useStore();
   const [analytics, setAnalytics] = useState<any>(null);
   const [pages, setPages] = useState<any[]>([]);
   const [selectedPage, setSelectedPage] = useState<any | null>(null);
@@ -29,7 +29,7 @@ export const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedSubject]);
+  }, [selectedSubject, refreshTrigger]);
 
   const handleCreatePage = async (title: string = 'Untitled Page', icon: string = '📄', blocks?: any[]) => {
     try {

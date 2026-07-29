@@ -28,7 +28,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenFocusFlow }) => {
-  const { user, logout, subjects, setSubjects, selectedSubject, setSelectedSubject, setUploadModalOpen, activeTab, setActiveTab } = useStore();
+  const { user, logout, subjects, setSubjects, selectedSubject, setSelectedSubject, setUploadModalOpen, activeTab, setActiveTab, refreshTrigger } = useStore();
   const [newSubjName, setNewSubjName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [insights, setInsights] = useState<any>(null);
@@ -49,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenFocusFlow }) => {
 
   useEffect(() => {
     fetchSubjects();
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchInsights = async (subjectId: number) => {
     setLoadingInsights(true);

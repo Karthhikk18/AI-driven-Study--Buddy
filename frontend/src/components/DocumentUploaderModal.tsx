@@ -4,7 +4,7 @@ import { documentApi } from '../services/api';
 import { Upload, X, FileText, CheckCircle, AlertCircle, Link2, Youtube, Globe, Loader2, Sparkles } from 'lucide-react';
 
 export const DocumentUploaderModal: React.FC = () => {
-  const { isUploadModalOpen, setUploadModalOpen, selectedSubject, subjects } = useStore();
+  const { isUploadModalOpen, setUploadModalOpen, selectedSubject, subjects, triggerRefresh } = useStore();
   const [activeTab, setActiveTab] = useState<'file' | 'link'>('file');
   const [file, setFile] = useState<File | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
@@ -24,6 +24,7 @@ export const DocumentUploaderModal: React.FC = () => {
 
     try {
       const res = await documentApi.uploadDocument(activeSubjectId, file);
+      triggerRefresh();
       setResultMessage({
         type: 'success',
         text: `Successfully uploaded & OCR processed '${res.data?.filename || file.name}'!`,
@@ -35,6 +36,7 @@ export const DocumentUploaderModal: React.FC = () => {
       }, 1500);
     } catch (err: any) {
       console.warn('Upload API fallback:', err);
+      triggerRefresh();
       setResultMessage({
         type: 'success',
         text: `Successfully uploaded & OCR processed '${file.name}'!`,
@@ -58,6 +60,7 @@ export const DocumentUploaderModal: React.FC = () => {
 
     try {
       const res = await documentApi.uploadLink(activeSubjectId, linkUrl.trim());
+      triggerRefresh();
       setResultMessage({
         type: 'success',
         text: `Successfully ingested & summarized '${res.data.filename}'!`,
